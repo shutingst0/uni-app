@@ -1,0 +1,64 @@
+import random
+
+from constants import MAX_SUBJECTS
+from subject import Subject
+
+
+class SubjectEnrollmentService:
+    def __init__(self, student_data_repository):
+        self.student_data_repository = student_data_repository
+
+    def _generate_subject_id(self, subjects):
+        used_ids = []
+        for subject in subjects:
+            used_ids.append(subject["id"])
+
+        while True:
+            new_id = str(random.randint(1, 999)).zfill(3)
+            if new_id not in used_ids:
+                return new_id
+
+    def enrol_subject(self, student_id):
+        student = self.student_data_repository.find_student_by_id(student_id)
+        if student is None:
+            print("Student does not exist")
+            return False
+
+        if len(student.subjects) >= MAX_SUBJECTS:
+            print("Students are allowed to enrol in 4 subjects only")
+            return False
+
+        subject_id = self._generate_subject_id(student.subjects)
+
+        subject = Subject(subject_id).to_dict()
+        student.subjects.append(subject)
+        self.student_data_repository.update_student(student)
+
+        print("Enrolling in Subject-" + subject_id)
+        print("You are now enrolled in", len(student.subjects), "out of 4 subjects")
+        return True
+
+    def remove_subject(self, student_id, subject_id):
+        student = self.student_data_repository.find_student_by_id(student_id)
+        if student is None:
+            print("Student does not exist")
+            return False
+
+        new_subjects = []
+        found = False
+
+        for subject in student.subjects:
+            if subject["id"] == subject_id:
+                found = True
+            else:
+                new_subjects.append(subject)
+
+        if not found:
+            print("Subject does not exist")
+            return False
+
+        student.subjects = new_subjects
+        self.student_data_repository.update_student(student)
+
+        print("Dropping Subject-" + subject_id)
+        return True

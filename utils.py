@@ -7,32 +7,6 @@ def validate_password(password):
     return PASSWORD_RE.match(password) is not None
 
 
-def generate_subject_id(subjects):
-    used_ids = []
-
-    for subject in subjects:
-        used_ids.append(subject["id"])
-
-    while True:
-        new_id = str(random.randint(1, 999)).zfill(3)
-
-        if new_id not in used_ids:
-            return new_id
-
-
-def grade_from_mark(mark):
-    if mark < 50:
-        return "Z"
-    elif mark < 65:
-        return "P"
-    elif mark < 75:
-        return "C"
-    elif mark < 85:
-        return "D"
-    else:
-        return "HD"
-
-
 def average_mark(student):
     subjects = student["subjects"]
 
