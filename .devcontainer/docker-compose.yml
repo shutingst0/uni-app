@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces/${localWorkspaceFolderBasename}:cached
+      - workspace-config-5e24eq:/home/node
+    command: sleep infinity
+
+volumes:
+  workspace-config-5e24eq:
