@@ -1,10 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
-# Yuhang Wang 
+# region Yuhang Wang
 import json
 import os
 import random
@@ -14,8 +8,8 @@ import re
 DATA_FILE = "students.data"
 MAX_SUBJECTS = 4
 
-EMAIL_RE = re.compile(r"@university\.com$", re.IGNORECASE)
-PASSWORD_RE = re.compile(r"^[A-Z][A-Za-z]{4,}\d{3,}$")
+EMAIL_REGEX = r"@university\.com$"
+PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$"
 
 
 # =========================
@@ -61,6 +55,11 @@ class Student:
             "password": self.password,
             "subjects": self.subjects
         }
+
+
+# =========================
+# Database Class
+# =========================
 
 class Database:
     def __init__(self, filename=DATA_FILE):
@@ -145,74 +144,112 @@ class Database:
 
 db = Database()
 
-
-# =========================（Shuting Yang）
-# Helper Functions
+# region Shuting Yang
+# =========================
+# Account Service
 # =========================
 
 class AccountService:
     def __init__(self, students=None):
         self.students = [self._from_dict(s) for s in students] if students else []
 
-    def _from_dict(self, d):
-        return Student(d["id"], d["name"], d["email"], d["password"], d.get("subjects", []))
-        
-    def validate(self, email, password):     #只负责检查，返回ture or false
-        valid_email = bool(re.match(r"[^@]+@university\.com$", email)) # bool 会判断值是否为True or False, re.match只会返还string
-        valid_password = bool(re.match(r"[A-Z][a-zA-Z]{4,}\d{3,}", password))
-        
+    def _from_dict(self, student_dict):
+        return Student(student_dict["id"], student_dict["name"], student_dict["email"], student_dict["password"], student_dict.get("subjects", []))
+
+    def validate(self, email, password):
+        valid_email = bool(re.fullmatch(EMAIL_REGEX, email, re.IGNORECASE))
+        valid_password = bool(re.fullmatch(PASSWORD_REGEX, password))
+
         if valid_password is False or valid_email is False:
             print("Incorrect email or password format")
             return False
-        
-        print("email and password format acceptable")
+
+        print("Email and password format acceptable")
         return True
-    
+
     def check_duplicate(self, new_student):
-        for existing_student in self.students: #前面的existing_student是我自己取的名字
-            if new_student.email == existing_student.email:
-                print(f"Student with email {new_student.email} already exist")
+        for existing_student in self.students:
+            if new_student.email.lower() == existing_student.email.lower():
+                print(f"Student with email {new_student.email} already exists")
                 return True
-        
+
         return False
-    
+
     def generate_unique_student_id(self):
         existing_ids = {s.id for s in self.students}
+
         while True:
             new_id = f"{random.randint(0, 999999):06d}"
+
             if new_id not in existing_ids:
                 return new_id
-    
-    def register(self, name, email, password):    #负责整个流程
-        is_valid = self.validate(email, password) # 先检查邮箱和密码格式是否正确，通过才继续。
+
+    def register(self, name, email, password):
+        # 负责整个注册流程
+        name = name.strip()
+        email = email.strip().lower()
+        password = password.strip()
+
+        if name == "":
+            print("Name cannot be empty")
+            return None
+
+        is_valid = self.validate(email, password)
+
         if is_valid is not True:
-            return
+            return None
 
         student_id = self.generate_unique_student_id()
-        student = Student(student_id, name, email, password)     #创建一个新的学生对象
+        student = Student(student_id, name, email, password)
 
         has_duplicate = self.check_duplicate(student)
+
         if has_duplicate is True:
-            return
-                
-        self.students.append(student)       #把这个新学生加入列表
+            return None
+
+        self.students.append(student)
+
         print(f"Signed up student {student.name}")
+        print("Student ID:", student.id)
+
         return student.to_dict()
-    
+
     def login(self, email, password):
+        email = email.strip().lower()
+        password = password.strip()
+
         is_valid = self.validate(email, password)
+
         if is_valid is not True:
-            return 
+            return None
+
         for existing_student in self.students:
-            if email == existing_student.email and password == existing_student.password:
-                print(f"Login successdul")
+            if (
+                email == existing_student.email.lower()
+                and password == existing_student.password
+            ):
+                print("Login successful")
                 return existing_student.to_dict()
-            
-        print("Student does not exist")
+
+        print("Student does not exist or password is incorrect")
         return None
 
-def validate_password(password):
-    return PASSWORD_RE.match(password) is not None
+
+# =========================
+# Helper Functions
+# =========================
+
+def grade_from_mark(mark):
+    if mark < 50:
+        return "Z"
+    elif mark < 65:
+        return "P"
+    elif mark < 75:
+        return "C"
+    elif mark < 85:
+        return "D"
+    else:
+        return "HD"
 
 
 def generate_subject_id(subjects):
@@ -226,19 +263,6 @@ def generate_subject_id(subjects):
 
         if new_id not in used_ids:
             return new_id
-
-
-def grade_from_mark(mark):
-    if mark < 50:
-        return "Z"
-    elif mark < 65:
-        return "P"
-    elif mark < 75:
-        return "C"
-    elif mark < 85:
-        return "D"
-    else:
-        return "HD"
 
 
 def average_mark(student):
@@ -277,35 +301,36 @@ def register_student():
     email = input_text("Email: ").strip().lower()
     password = input_text("Password: ").strip()
 
-    if name == "":
-        print("Name cannot be empty")
+    students = db.read_students()
+    account_service = AccountService(students)
+
+    new_student = account_service.register(name, email, password)
+
+    if new_student is None:
         return
 
-    student = AccountService(db.read_students()).register(name, email, password)
-    if student is None:
-        return
-
-    db.save_student(student)
-    print(f"Student {student['name']} registered successfully")
-    print("Student ID:", student["id"])
+    db.save_student(new_student)
 
 
 def login_student():
     print("Student Sign In")
 
-    email = input_text("Email: ").strip().lower()
-    password = input_text("Password: ").strip()
+    email = input_text("Email: ")
+    password = input_text("Password: ")
 
-    student = AccountService(db.read_students()).login(email, password)
+    students = db.read_students()
+    account_service = AccountService(students)
+
+    student = account_service.login(email, password)
+
     if student is None:
         return
 
-    print("Student login successful")
     subject_menu(student["id"])
 
-
+# region Ming Sun
 # =========================
-# Subject Enrolment System（Ming Sun ）
+# Subject Enrolment System
 # =========================
 
 def subject_menu(student_id):
@@ -342,7 +367,9 @@ def change_password(student_id):
         print("Password does not match - try again")
         return
 
-    if not validate_password(new_password):
+    valid_password = bool(re.fullmatch(PASSWORD_REGEX, new_password))
+
+    if valid_password is False:
         print("Incorrect password format")
         return
 
@@ -601,8 +628,8 @@ def clear_database():
     else:
         print("Clear cancelled")
 
-
-# =========================（JIN JIE DENG）
+# region Jinjie Deng
+# =========================
 # Main University System
 # =========================
 
@@ -638,4 +665,3 @@ def university_menu():
 
 if __name__ == "__main__":
     university_menu()
-
