@@ -2,6 +2,7 @@ import random
 
 from constants import MAX_SUBJECTS
 from subject import Subject
+from utils import pad_number
 
 
 class SubjectEnrollmentService:
@@ -14,7 +15,7 @@ class SubjectEnrollmentService:
             used_ids.append(subject["id"])
 
         while True:
-            new_id = str(random.randint(1, 999)).zfill(3)
+            new_id = pad_number(random.randint(1, 999), 3)
             if new_id not in used_ids:
                 return new_id
 

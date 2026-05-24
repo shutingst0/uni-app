@@ -2,6 +2,7 @@ import random
 import re
 
 from student import Student
+from utils import pad_number
 
 
 class AccountService:
@@ -25,7 +26,7 @@ class AccountService:
             existing_ids.append(student.id)
 
         while True:
-            new_id = f"{random.randint(0, 999999):06d}"
+            new_id = pad_number(random.randint(0, 999999), 6)
             if new_id not in existing_ids:
                 return new_id
 

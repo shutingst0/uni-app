@@ -3,6 +3,10 @@ import random
 from constants import MAX_SUBJECTS, EMAIL_RE, PASSWORD_RE
 
 
+def pad_number(number, length):
+    return str(number).zfill(length)
+
+
 def validate_password(password):
     return PASSWORD_RE.match(password) is not None
 
