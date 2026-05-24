@@ -1,7 +1,6 @@
 import random
 import re
 
-from printer import Printer
 from student import Student
 from utils import pad_number
 
@@ -14,12 +13,13 @@ class AccountService:
         valid_email = bool(re.match(r"[^@]+@university\.com$", email))
         valid_password = bool(re.match(r"[A-Z][a-zA-Z]{4,}\d{3,}", password))
 
-        if valid_password is False or valid_email is False:
-            Printer.error("Incorrect email or password format")
-            return False
+        if not valid_password or not valid_email:
+            return False, "Incorrect email or password format"
 
-        Printer.warn("email and password format acceptable")
-        return True
+        return True, None
+
+    def get_student(self, student_id):
+        return self.student_data_repository.find_student_by_id(student_id)
 
     def _generate_unique_student_id(self):
         existing_ids = []
@@ -32,46 +32,40 @@ class AccountService:
                 return new_id
 
     def register(self, name, email, password):
-        is_valid = self.validate(email, password)
+        is_valid, error = self.validate(email, password)
         if not is_valid:
-            return
+            return None, error
 
         existing_student = self.student_data_repository.find_student_by_email(email)
         if existing_student:
-            Printer.error(f"Student with email {email} already exist")
-            return
+            return None, f"Student with email {email} already exists"
 
         student_id = self._generate_unique_student_id()
         student = Student(student_id, name, email, password)
         self.student_data_repository.create_student(student)
-        Printer.success(f"Signed up student {student.name}")
-        return student
+        return student, None
 
     def change_password(self, student_id, new_password):
         student = self.student_data_repository.find_student_by_id(student_id)
         if student is None:
-            Printer.error("Student does not exist")
-            return False
+            return False, "Student does not exist"
 
-        is_valid = self.validate(student.email, new_password)
+        is_valid, error = self.validate(student.email, new_password)
         if not is_valid:
-            return False
+            return False, error
 
         student.password = new_password
         self.student_data_repository.update_student(student)
-        Printer.success("Password updated successfully")
-        return True
+        return True, None
 
     def login(self, email, password):
-        is_valid = self.validate(email, password)
+        is_valid, error = self.validate(email, password)
         if not is_valid:
-            return
+            return None, error
 
         student = self.student_data_repository.find_student_by_email(email)
         is_correct_password = student and student.password == password
         if is_correct_password:
-            Printer.success("Login successful")
-            return student
+            return student, None
 
-        Printer.error("Student does not exist")
-        return None
+        return None, "Student does not exist"
