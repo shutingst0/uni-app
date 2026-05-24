@@ -20,10 +20,9 @@ class AppState(Enum):
 
 
 class SubjectMenu:
-    def __init__(self, account_service, subject_enrollment_service, student_data_repository):
+    def __init__(self, account_service, subject_enrollment_service):
         self.account_service = account_service
         self.subject_enrollment_service = subject_enrollment_service
-        self.student_data_repository = student_data_repository
 
     def run(self, student_id, on_exit):
         while True:
@@ -53,10 +52,20 @@ class SubjectMenu:
             Printer.error("Password does not match - try again")
             return
 
-        self.account_service.change_password(student_id, new_password)
+        success, error = self.account_service.change_password(student_id, new_password)
+        if success:
+            Printer.success("Password updated successfully")
+        else:
+            Printer.error(error)
 
     def _enrol_subject(self, student_id):
-        self.subject_enrollment_service.enrol_subject(student_id)
+        subject_id, error = self.subject_enrollment_service.enrol_subject(student_id)
+        if subject_id is None:
+            Printer.error(error)
+            return
+        Printer.success(f"Enrolling in Subject-{subject_id}")
+        student = self.account_service.get_student(student_id)
+        Printer.info(f"You are now enrolled in {len(student.subjects)} out of 4 subjects")
 
     def _remove_subject(self, student_id):
         subject_id = input_text("Remove Subject by ID: ").strip()
@@ -68,10 +77,14 @@ class SubjectMenu:
             Printer.error("Invalid subject ID")
             return
 
-        self.subject_enrollment_service.remove_subject(student_id, subject_id)
+        success, error = self.subject_enrollment_service.remove_subject(student_id, subject_id)
+        if success:
+            Printer.success(f"Dropping Subject-{subject_id}")
+        else:
+            Printer.error(error)
 
     def _show_subjects(self, student_id):
-        student = self.student_data_repository.find_student_by_id(student_id)
+        student = self.account_service.get_student(student_id)
 
         if student is None:
             Printer.error("Student does not exist")
@@ -118,8 +131,9 @@ class StudentMenu:
             Printer.error("Name cannot be empty")
             return
 
-        student = self.account_service.register(name, email, password)
+        student, error = self.account_service.register(name, email, password)
         if student is None:
+            Printer.error(error)
             return
 
         Printer.success(f"Student {student.name} registered successfully")
@@ -131,8 +145,9 @@ class StudentMenu:
         email = input_text("Email: ").strip().lower()
         password = input_text("Password: ").strip()
 
-        student = self.account_service.login(email, password)
+        student, error = self.account_service.login(email, password)
         if student is None:
+            Printer.error(error)
             return None
 
         Printer.success("Student login successful")
@@ -232,7 +247,11 @@ class AdminMenu:
             Printer.error("Invalid student ID")
             return
 
-        self.admin_service.remove_student(student_id)
+        success, error = self.admin_service.remove_student(student_id)
+        if success:
+            Printer.success(f"Removing Student {student_id} Account")
+        else:
+            Printer.error(error)
 
     def _clear_database(self):
         Printer.warning("Clearing students database")
@@ -241,6 +260,7 @@ class AdminMenu:
 
         if answer == "y" or answer == "yes":
             self.admin_service.clear_students()
+            Printer.success("Students data cleared")
         else:
             Printer.info("Clear cancelled")
 
@@ -252,7 +272,7 @@ class UniCLIApp:
         subject_enrollment_service = SubjectEnrollmentService(student_data_repository)
         admin_service = AdminService(student_data_repository)
 
-        self.subject_menu = SubjectMenu(account_service, subject_enrollment_service, student_data_repository)
+        self.subject_menu = SubjectMenu(account_service, subject_enrollment_service)
         self.student_menu = StudentMenu(account_service)
         self.admin_menu = AdminMenu(admin_service)
 
