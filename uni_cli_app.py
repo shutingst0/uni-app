@@ -1,387 +1,274 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Yuhang Wang
-import random
-
 from account_service import AccountService
-from constants import MAX_SUBJECTS
-from database import db
-from subject import Subject
-from utils import average_mark, generate_subject_id, grade_from_mark, input_text, student_grade, validate_password
+from admin_service import AdminService
+from student_data_repository import StudentDataRepository
+from subject_enrollment_service import SubjectEnrollmentService
+from utils import input_text
 
 
-# =========================
-# Student Register / Login
-# =========================
+class SubjectMenu:
+    def __init__(self, account_service, subject_enrollment_service, student_data_repository):
+        self.account_service = account_service
+        self.subject_enrollment_service = subject_enrollment_service
+        self.student_data_repository = student_data_repository
 
-def register_student():
-    print("Student Sign Up")
+    def run(self, student_id):
+        while True:
+            choice = input_text("Student Course Menu (c/e/r/s/x): ").strip().lower()
 
-    name = input_text("Name: ").strip()
-    email = input_text("Email: ").strip().lower()
-    password = input_text("Password: ").strip()
+            if choice == "c":
+                self._change_password(student_id)
+            elif choice == "e":
+                self._enrol_subject(student_id)
+            elif choice == "r":
+                self._remove_subject(student_id)
+            elif choice == "s":
+                self._show_subjects(student_id)
+            elif choice == "x":
+                break
+            else:
+                print("Invalid option")
 
-    if name == "":
-        print("Name cannot be empty")
-        return
+    def _change_password(self, student_id):
+        print("Updating Password")
 
-    student = AccountService(db.read_students()).register(name, email, password)
-    if student is None:
-        return
+        new_password = input_text("New Password: ").strip()
+        confirm_password = input_text("Confirm Password: ").strip()
 
-    db.save_student(student)
-    print(f"Student {student['name']} registered successfully")
-    print("Student ID:", student["id"])
+        if new_password != confirm_password:
+            print("Password does not match - try again")
+            return
 
+        self.account_service.change_password(student_id, new_password)
 
-def login_student():
-    print("Student Sign In")
+    def _enrol_subject(self, student_id):
+        self.subject_enrollment_service.enrol_subject(student_id)
 
-    email = input_text("Email: ").strip().lower()
-    password = input_text("Password: ").strip()
+    def _remove_subject(self, student_id):
+        subject_id = input_text("Remove Subject by ID: ").strip()
 
-    student = AccountService(db.read_students()).login(email, password)
-    if student is None:
-        return
+        if subject_id.isdigit():
+            subject_id = subject_id.zfill(3)
 
-    print("Student login successful")
-    return student["id"]
+        if len(subject_id) != 3 or not subject_id.isdigit():
+            print("Invalid subject ID")
+            return
 
+        self.subject_enrollment_service.remove_subject(student_id, subject_id)
 
-# =========================
-# Subject Enrolment System
-# =========================
+    def _show_subjects(self, student_id):
+        student = self.student_data_repository.find_student_by_id(student_id)
 
-def change_password(student_id):
-    print("Updating Password")
+        if student is None:
+            print("Student does not exist")
+            return
 
-    student = db.find_student_by_id(student_id)
+        print("Showing", len(student.subjects), "subjects")
 
-    if student is None:
-        print("Student does not exist")
-        return
+        if len(student.subjects) == 0:
+            print("< Nothing to Display >")
+            return
 
-    new_password = input_text("New Password: ").strip()
-    confirm_password = input_text("Confirm Password: ").strip()
-
-    if new_password != confirm_password:
-        print("Password does not match - try again")
-        return
-
-    if not validate_password(new_password):
-        print("Incorrect password format")
-        return
-
-    student["password"] = new_password
-    db.save_student(student)
-
-    print("Password updated successfully")
+        print(student)
 
 
-def enrol_subject(student_id):
-    student = db.find_student_by_id(student_id)
+class StudentMenu:
+    def __init__(self, account_service, subject_menu):
+        self.account_service = account_service
+        self.subject_menu = subject_menu
 
-    if student is None:
-        print("Student does not exist")
-        return
+    def run(self):
+        while True:
+            choice = input_text("Student System (l/r/x): ").strip().lower()
 
-    subjects = student["subjects"]
+            if choice == "l":
+                self._login()
+            elif choice == "r":
+                self._register()
+            elif choice == "x":
+                break
+            else:
+                print("Invalid option")
 
-    if len(subjects) >= MAX_SUBJECTS:
-        print("Students are allowed to enrol in 4 subjects only")
-        return
+    def _register(self):
+        print("Student Sign Up")
 
-    subject_id = generate_subject_id(subjects)
-    mark = random.randint(25, 100)
-    grade = grade_from_mark(mark)
+        name = input_text("Name: ").strip()
+        email = input_text("Email: ").strip().lower()
+        password = input_text("Password: ").strip()
 
-    subject = Subject(subject_id, mark, grade).to_dict()
-    subjects.append(subject)
+        if name == "":
+            print("Name cannot be empty")
+            return
 
-    db.save_student(student)
+        student = self.account_service.register(name, email, password)
+        if student is None:
+            return
 
-    print("Enrolling in Subject-" + subject_id)
-    print("You are now enrolled in", len(subjects), "out of 4 subjects")
+        print(f"Student {student.name} registered successfully")
+        print("Student ID:", student.id)
+
+    def _login(self):
+        print("Student Sign In")
+
+        email = input_text("Email: ").strip().lower()
+        password = input_text("Password: ").strip()
+
+        student = self.account_service.login(email, password)
+        if student is None:
+            return
+
+        print("Student login successful")
+        self.subject_menu.run(student.id)
 
 
-def remove_subject(student_id):
-    student = db.find_student_by_id(student_id)
+class AdminMenu:
+    def __init__(self, admin_service):
+        self.admin_service = admin_service
 
-    if student is None:
-        print("Student does not exist")
-        return
+    def run(self):
+        while True:
+            choice = input_text("Admin System (c/g/p/r/s/x): ").strip().lower()
 
-    subject_id = input_text("Remove Subject by ID: ").strip()
+            if choice == "c":
+                self._clear_database()
+            elif choice == "g":
+                self._group_students()
+            elif choice == "p":
+                self._partition_students()
+            elif choice == "r":
+                self._remove_student()
+            elif choice == "s":
+                self._show_all_students()
+            elif choice == "x":
+                break
+            else:
+                print("Invalid option")
 
-    if subject_id.isdigit():
-        subject_id = subject_id.zfill(3)
+    def _show_all_students(self):
+        students = self.admin_service.get_all_students()
 
-    if len(subject_id) != 3 or not subject_id.isdigit():
-        print("Invalid subject ID")
-        return
+        print("Student List")
 
-    subjects = student["subjects"]
-    new_subjects = []
+        if len(students) == 0:
+            print("< Nothing to Display >")
+            return
 
-    found = False
+        for student in students:
+            print(student)
 
-    for subject in subjects:
-        if subject["id"] == subject_id:
-            found = True
+    def _group_students(self):
+        groups = self.admin_service.group_students()
+
+        print("Grade Grouping")
+
+        all_empty = True
+        for grade in groups:
+            if len(groups[grade]) > 0:
+                all_empty = False
+                break
+
+        if all_empty:
+            print("< Nothing to Display >")
+            return
+
+        for grade in groups:
+            if len(groups[grade]) > 0:
+                print(grade, "-->", end=" ")
+
+                for student in groups[grade]:
+                    result = student.get_result()
+                    print(
+                        "[" + student.name,
+                        "::",
+                        student.id,
+                        "--> GRADE:",
+                        result["grade_average"],
+                        "--> MARK:",
+                        format(result["mark_average"], ".2f") + "]",
+                        end=" "
+                    )
+
+                print()
+
+    def _partition_students(self):
+        pass_students, fail_students = self.admin_service.partition_students()
+
+        print("PASS/FAIL Partition")
+        print("FAIL -->", self._format_student_list(fail_students))
+        print("PASS -->", self._format_student_list(pass_students))
+
+    def _format_student_list(self, students):
+        if len(students) == 0:
+            return "[]"
+
+        text = "["
+
+        for student in students:
+            result = student.get_result()
+            text += (
+                student.name
+                + " :: "
+                + student.id
+                + " --> GRADE: "
+                + result["grade_average"]
+                + " --> MARK: "
+                + format(result["mark_average"], ".2f")
+                + ", "
+            )
+
+        text = text.rstrip(", ")
+        text += "]"
+
+        return text
+
+    def _remove_student(self):
+        student_id = input_text("Remove by ID: ").strip()
+
+        if len(student_id) != 6 or not student_id.isdigit():
+            print("Invalid student ID")
+            return
+
+        self.admin_service.remove_student(student_id)
+
+    def _clear_database(self):
+        print("Clearing students database")
+
+        answer = input_text("Are you sure you want to clear the database (Y)ES/(N)O: ").strip().lower()
+
+        if answer == "y" or answer == "yes":
+            self.admin_service.clear_students()
         else:
-            new_subjects.append(subject)
-
-    if not found:
-        print("Subject does not exist")
-        return
-
-    student["subjects"] = new_subjects
-    db.save_student(student)
-
-    print("Dropping Subject-" + subject_id)
+            print("Clear cancelled")
 
 
-def show_subjects(student_id):
-    student = db.find_student_by_id(student_id)
+class UniCLIApp:
+    def __init__(self):
+        student_data_repository = StudentDataRepository()
+        account_service = AccountService(student_data_repository)
+        subject_enrollment_service = SubjectEnrollmentService(student_data_repository)
+        admin_service = AdminService(student_data_repository)
 
-    if student is None:
-        print("Student does not exist")
-        return
+        subject_menu = SubjectMenu(account_service, subject_enrollment_service, student_data_repository)
+        self.student_menu = StudentMenu(account_service, subject_menu)
+        self.admin_menu = AdminMenu(admin_service)
 
-    subjects = student["subjects"]
+    def run(self):
+        while True:
+            choice = input_text("University System: (A)dmin, (S)tudent, or X: ").strip().lower()
 
-    print("Showing", len(subjects), "subjects")
-
-    if len(subjects) == 0:
-        print("< Nothing to Display >")
-        return
-
-    for subject in subjects:
-        print(
-            "Subject-" + subject["id"],
-            "--> mark:",
-            subject["mark"],
-            "--> grade:",
-            subject["grade"]
-        )
-
-    print("Average Mark:", format(average_mark(student), ".2f"))
-
-
-# =========================
-# Admin System
-# =========================
-
-def show_all_students():
-    students = db.read_students()
-
-    print("Student List")
-
-    if len(students) == 0:
-        print("< Nothing to Display >")
-        return
-
-    for student in students:
-        print(
-            student["name"],
-            "::",
-            student["id"],
-            "--> Email:",
-            student["email"]
-        )
-
-
-def group_students():
-    students = db.read_students()
-
-    print("Grade Grouping")
-
-    if len(students) == 0:
-        print("< Nothing to Display >")
-        return
-
-    groups = {
-        "HD": [],
-        "D": [],
-        "C": [],
-        "P": [],
-        "Z": []
-    }
-
-    for student in students:
-        grade = student_grade(student)
-        groups[grade].append(student)
-
-    for grade in groups:
-        if len(groups[grade]) > 0:
-            print(grade, "-->", end=" ")
-
-            for student in groups[grade]:
-                avg = average_mark(student)
-                print(
-                    "[" + student["name"],
-                    "::",
-                    student["id"],
-                    "--> GRADE:",
-                    grade,
-                    "--> MARK:",
-                    format(avg, ".2f") + "]",
-                    end=" "
-                )
-
-            print()
-
-
-def partition_students():
-    students = db.read_students()
-
-    print("PASS/FAIL Partition")
-
-    pass_students = []
-    fail_students = []
-
-    for student in students:
-        subjects = student["subjects"]
-        avg = average_mark(student)
-
-        if len(subjects) == MAX_SUBJECTS and avg >= 50:
-            pass_students.append(student)
-        else:
-            fail_students.append(student)
-
-    print("FAIL -->", format_student_list(fail_students))
-    print("PASS -->", format_student_list(pass_students))
-
-
-def format_student_list(students):
-    if len(students) == 0:
-        return "[]"
-
-    text = "["
-
-    for student in students:
-        grade = student_grade(student)
-        avg = average_mark(student)
-
-        text += (
-            student["name"]
-            + " :: "
-            + student["id"]
-            + " --> GRADE: "
-            + grade
-            + " --> MARK: "
-            + format(avg, ".2f")
-            + ", "
-        )
-
-    text = text.rstrip(", ")
-    text += "]"
-
-    return text
-
-
-def remove_student():
-    student_id = input_text("Remove by ID: ").strip()
-
-    if len(student_id) != 6 or not student_id.isdigit():
-        print("Invalid student ID")
-        return
-
-    removed = db.remove_student(student_id)
-
-    if removed:
-        print("Removing Student", student_id, "Account")
-    else:
-        print("Student", student_id, "does not exist")
-
-
-def clear_database():
-    print("Clearing students database")
-
-    answer = input_text("Are you sure you want to clear the database (Y)ES/(N)O: ")
-    answer = answer.strip().lower()
-
-    if answer == "y" or answer == "yes":
-        db.clear_students()
-        print("Students data cleared")
-    else:
-        print("Clear cancelled")
-
-
-# =========================
-# Main University System
-# =========================
-
-def subject_menu(student_id):
-    while True:
-        choice = input_text("Student Course Menu (c/e/r/s/x): ").strip().lower()
-
-        if choice == "c":
-            change_password(student_id)
-        elif choice == "e":
-            enrol_subject(student_id)
-        elif choice == "r":
-            remove_subject(student_id)
-        elif choice == "s":
-            show_subjects(student_id)
-        elif choice == "x":
-            break
-        else:
-            print("Invalid option")
-
-
-def student_menu():
-    while True:
-        choice = input_text("Student System (l/r/x): ").strip().lower()
-
-        if choice == "l":
-            student_id = login_student()
-            if student_id:
-                subject_menu(student_id)
-        elif choice == "r":
-            register_student()
-        elif choice == "x":
-            break
-        else:
-            print("Invalid option")
-
-
-def admin_menu():
-    while True:
-        choice = input_text("Admin System (c/g/p/r/s/x): ").strip().lower()
-
-        if choice == "c":
-            clear_database()
-        elif choice == "g":
-            group_students()
-        elif choice == "p":
-            partition_students()
-        elif choice == "r":
-            remove_student()
-        elif choice == "s":
-            show_all_students()
-        elif choice == "x":
-            break
-        else:
-            print("Invalid option")
-
-
-def university_menu():
-    while True:
-        choice = input_text("University System: (A)dmin, (S)tudent, or X: ")
-        choice = choice.strip().lower()
-
-        if choice == "a":
-            admin_menu()
-        elif choice == "s":
-            student_menu()
-        elif choice == "x":
-            print("Thank You")
-            break
-        else:
-            print("Invalid option")
+            if choice == "a":
+                self.admin_menu.run()
+            elif choice == "s":
+                self.student_menu.run()
+            elif choice == "x":
+                print("Thank You")
+                break
+            else:
+                print("Invalid option")
 
 
 if __name__ == "__main__":
-    university_menu()
+    UniCLIApp().run()

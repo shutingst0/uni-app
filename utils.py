@@ -1,3 +1,10 @@
+def input_text(message):
+    try:
+        return input(message)
+    except EOFError:
+        return ""
+
+
 def pad_number(number, length):
     return str(number).zfill(length)
 
