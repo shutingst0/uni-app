@@ -335,6 +335,10 @@ def login_student():
 # =========================
 # Subject Enrolment System
 # =========================
+#subject_menu(student_id) is the course menu after student login.
+#The program uses while True to create a loop menu until the student enters x to exit.
+#User input uses .strip().lower() to remove spaces and convert to lowercase.
+#c change password,e enrol subject,r remove subject,s show subjects,x exit system
 
 def subject_menu(student_id):
     while True:
