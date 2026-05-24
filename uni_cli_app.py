@@ -8,7 +8,7 @@ import re
 DATA_FILE = "students.data"
 MAX_SUBJECTS = 4
 
-EMAIL_REGEX = r"@university\.com$"
+EMAIL_REGEX = r"^[^@]+@university\.com$"
 PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$"
 
 
@@ -157,8 +157,11 @@ class AccountService:
         return Student(student_dict["id"], student_dict["name"], student_dict["email"], student_dict["password"], student_dict.get("subjects", []))
 
     def validate(self, email, password):
-        valid_email = bool(re.fullmatch(EMAIL_REGEX, email, re.IGNORECASE))
-        valid_password = bool(re.fullmatch(PASSWORD_REGEX, password))
+        valid_email = bool(re.match(EMAIL_REGEX, email))
+        valid_password = bool(re.match(PASSWORD_REGEX, password))
+
+        print(f"email {valid_email}")
+        print(f"password {valid_password}")
 
         if valid_password is False or valid_email is False:
             print("Incorrect email or password format")
