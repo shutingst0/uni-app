@@ -1,11 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from enum import Enum
+
 from account_service import AccountService
 from admin_service import AdminService
 from student_data_repository import StudentDataRepository
 from subject_enrollment_service import SubjectEnrollmentService
 from utils import input_text
+
+
+class AppState(Enum):
+    UNIVERSITY = "university"
+    STUDENT = "student"
+    SUBJECT = "subject"
+    ADMIN = "admin"
+    EXIT = "exit"
 
 
 class SubjectMenu:
@@ -14,7 +24,7 @@ class SubjectMenu:
         self.subject_enrollment_service = subject_enrollment_service
         self.student_data_repository = student_data_repository
 
-    def run(self, student_id):
+    def run(self, student_id, on_exit):
         while True:
             choice = input_text("Student Course Menu (c/e/r/s/x): ").strip().lower()
 
@@ -27,6 +37,7 @@ class SubjectMenu:
             elif choice == "s":
                 self._show_subjects(student_id)
             elif choice == "x":
+                on_exit()
                 break
             else:
                 print("Invalid option")
@@ -75,19 +86,22 @@ class SubjectMenu:
 
 
 class StudentMenu:
-    def __init__(self, account_service, subject_menu):
+    def __init__(self, account_service):
         self.account_service = account_service
-        self.subject_menu = subject_menu
 
-    def run(self):
+    def run(self, on_exit, on_login):
         while True:
             choice = input_text("Student System (l/r/x): ").strip().lower()
 
             if choice == "l":
-                self._login()
+                student_id = self._login()
+                if student_id:
+                    on_login(student_id)
+                    break
             elif choice == "r":
                 self._register()
             elif choice == "x":
+                on_exit()
                 break
             else:
                 print("Invalid option")
@@ -118,17 +132,17 @@ class StudentMenu:
 
         student = self.account_service.login(email, password)
         if student is None:
-            return
+            return None
 
         print("Student login successful")
-        self.subject_menu.run(student.id)
+        return student.id
 
 
 class AdminMenu:
     def __init__(self, admin_service):
         self.admin_service = admin_service
 
-    def run(self):
+    def run(self, on_exit):
         while True:
             choice = input_text("Admin System (c/g/p/r/s/x): ").strip().lower()
 
@@ -143,6 +157,7 @@ class AdminMenu:
             elif choice == "s":
                 self._show_all_students()
             elif choice == "x":
+                on_exit()
                 break
             else:
                 print("Invalid option")
@@ -251,23 +266,57 @@ class UniCLIApp:
         subject_enrollment_service = SubjectEnrollmentService(student_data_repository)
         admin_service = AdminService(student_data_repository)
 
-        subject_menu = SubjectMenu(account_service, subject_enrollment_service, student_data_repository)
-        self.student_menu = StudentMenu(account_service, subject_menu)
+        self.subject_menu = SubjectMenu(account_service, subject_enrollment_service, student_data_repository)
+        self.student_menu = StudentMenu(account_service)
         self.admin_menu = AdminMenu(admin_service)
 
-    def run(self):
-        while True:
-            choice = input_text("University System: (A)dmin, (S)tudent, or X: ").strip().lower()
+        self.current_state = AppState.UNIVERSITY
+        self.current_student_id = None
 
-            if choice == "a":
-                self.admin_menu.run()
-            elif choice == "s":
-                self.student_menu.run()
-            elif choice == "x":
-                print("Thank You")
-                break
-            else:
-                print("Invalid option")
+    def run(self):
+        while self.current_state != AppState.EXIT:
+            if self.current_state == AppState.UNIVERSITY:
+                self._run_university_menu()
+            elif self.current_state == AppState.STUDENT:
+                self._run_student_menu()
+            elif self.current_state == AppState.SUBJECT:
+                self._run_subject_menu()
+            elif self.current_state == AppState.ADMIN:
+                self._run_admin_menu()
+
+    def _run_university_menu(self):
+        choice = input_text("University System: (A)dmin, (S)tudent, or X: ").strip().lower()
+
+        if choice == "a":
+            self.current_state = AppState.ADMIN
+        elif choice == "s":
+            self.current_state = AppState.STUDENT
+        elif choice == "x":
+            print("Thank You")
+            self.current_state = AppState.EXIT
+        else:
+            print("Invalid option")
+
+    def _run_student_menu(self):
+        self.student_menu.run(
+            on_exit=lambda: self._set_state(AppState.UNIVERSITY),
+            on_login=lambda student_id: self._set_state(AppState.SUBJECT, student_id)
+        )
+
+    def _run_subject_menu(self):
+        self.subject_menu.run(
+            self.current_student_id,
+            on_exit=lambda: self._set_state(AppState.STUDENT)
+        )
+
+    def _run_admin_menu(self):
+        self.admin_menu.run(
+            on_exit=lambda: self._set_state(AppState.UNIVERSITY)
+        )
+
+    def _set_state(self, state, student_id=None):
+        self.current_state = state
+        self.current_student_id = student_id
 
 
 if __name__ == "__main__":
