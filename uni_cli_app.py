@@ -4,6 +4,7 @@
 from enum import Enum
 
 from account_service import AccountService
+from printer import Printer
 from admin_service import AdminService
 from student_data_repository import StudentDataRepository
 from subject_enrollment_service import SubjectEnrollmentService
@@ -40,16 +41,16 @@ class SubjectMenu:
                 on_exit()
                 break
             else:
-                print("Invalid option")
+                Printer.error("Invalid option")
 
     def _change_password(self, student_id):
-        print("Updating Password")
+        Printer.info("Updating Password")
 
         new_password = input_text("New Password: ").strip()
         confirm_password = input_text("Confirm Password: ").strip()
 
         if new_password != confirm_password:
-            print("Password does not match - try again")
+            Printer.error("Password does not match - try again")
             return
 
         self.account_service.change_password(student_id, new_password)
@@ -64,7 +65,7 @@ class SubjectMenu:
             subject_id = subject_id.zfill(3)
 
         if len(subject_id) != 3 or not subject_id.isdigit():
-            print("Invalid subject ID")
+            Printer.error("Invalid subject ID")
             return
 
         self.subject_enrollment_service.remove_subject(student_id, subject_id)
@@ -73,13 +74,13 @@ class SubjectMenu:
         student = self.student_data_repository.find_student_by_id(student_id)
 
         if student is None:
-            print("Student does not exist")
+            Printer.error("Student does not exist")
             return
 
-        print("Showing", len(student.subjects), "subjects")
+        Printer.info(f"Showing {len(student.subjects)} subjects")
 
         if len(student.subjects) == 0:
-            print("< Nothing to Display >")
+            Printer.warning("< Nothing to Display >")
             return
 
         print(student)
@@ -104,28 +105,28 @@ class StudentMenu:
                 on_exit()
                 break
             else:
-                print("Invalid option")
+                Printer.error("Invalid option")
 
     def _register(self):
-        print("Student Sign Up")
+        Printer.info("Student Sign Up")
 
         name = input_text("Name: ").strip()
         email = input_text("Email: ").strip().lower()
         password = input_text("Password: ").strip()
 
         if name == "":
-            print("Name cannot be empty")
+            Printer.error("Name cannot be empty")
             return
 
         student = self.account_service.register(name, email, password)
         if student is None:
             return
 
-        print(f"Student {student.name} registered successfully")
-        print("Student ID:", student.id)
+        Printer.success(f"Student {student.name} registered successfully")
+        Printer.info(f"Student ID: {student.id}")
 
     def _login(self):
-        print("Student Sign In")
+        Printer.info("Student Sign In")
 
         email = input_text("Email: ").strip().lower()
         password = input_text("Password: ").strip()
@@ -134,7 +135,7 @@ class StudentMenu:
         if student is None:
             return None
 
-        print("Student login successful")
+        Printer.success("Student login successful")
         return student.id
 
 
@@ -160,15 +161,15 @@ class AdminMenu:
                 on_exit()
                 break
             else:
-                print("Invalid option")
+                Printer.error("Invalid option")
 
     def _show_all_students(self):
         students = self.admin_service.get_all_students()
 
-        print("Student List")
+        Printer.info("Student List")
 
         if len(students) == 0:
-            print("< Nothing to Display >")
+            Printer.warning("< Nothing to Display >")
             return
 
         for student in students:
@@ -177,7 +178,7 @@ class AdminMenu:
     def _group_students(self):
         groups = self.admin_service.group_students()
 
-        print("Grade Grouping")
+        Printer.info("Grade Grouping")
 
         all_empty = True
         for grade in groups:
@@ -186,7 +187,7 @@ class AdminMenu:
                 break
 
         if all_empty:
-            print("< Nothing to Display >")
+            Printer.warning("< Nothing to Display >")
             return
 
         for grade in groups:
@@ -196,13 +197,7 @@ class AdminMenu:
                 for student in groups[grade]:
                     result = student.get_result()
                     print(
-                        "[" + student.name,
-                        "::",
-                        student.id,
-                        "--> GRADE:",
-                        result["grade_average"],
-                        "--> MARK:",
-                        format(result["mark_average"], ".2f") + "]",
+                        f"[{student.name} :: {student.id} --> GRADE: {result['grade_average']} --> MARK: {result['mark_average']:.2f}]",
                         end=" "
                     )
 
@@ -211,9 +206,9 @@ class AdminMenu:
     def _partition_students(self):
         pass_students, fail_students = self.admin_service.partition_students()
 
-        print("PASS/FAIL Partition")
-        print("FAIL -->", self._format_student_list(fail_students))
-        print("PASS -->", self._format_student_list(pass_students))
+        Printer.info("PASS/FAIL Partition")
+        Printer.error(f"FAIL --> {self._format_student_list(fail_students)}")
+        Printer.success(f"PASS --> {self._format_student_list(pass_students)}")
 
     def _format_student_list(self, students):
         if len(students) == 0:
@@ -223,16 +218,7 @@ class AdminMenu:
 
         for student in students:
             result = student.get_result()
-            text += (
-                student.name
-                + " :: "
-                + student.id
-                + " --> GRADE: "
-                + result["grade_average"]
-                + " --> MARK: "
-                + format(result["mark_average"], ".2f")
-                + ", "
-            )
+            text += f"{student.name} :: {student.id} --> GRADE: {result['grade_average']} --> MARK: {result['mark_average']:.2f}, "
 
         text = text.rstrip(", ")
         text += "]"
@@ -243,20 +229,20 @@ class AdminMenu:
         student_id = input_text("Remove by ID: ").strip()
 
         if len(student_id) != 6 or not student_id.isdigit():
-            print("Invalid student ID")
+            Printer.error("Invalid student ID")
             return
 
         self.admin_service.remove_student(student_id)
 
     def _clear_database(self):
-        print("Clearing students database")
+        Printer.warning("Clearing students database")
 
         answer = input_text("Are you sure you want to clear the database (Y)ES/(N)O: ").strip().lower()
 
         if answer == "y" or answer == "yes":
             self.admin_service.clear_students()
         else:
-            print("Clear cancelled")
+            Printer.info("Clear cancelled")
 
 
 class UniCLIApp:
@@ -292,10 +278,10 @@ class UniCLIApp:
         elif choice == "s":
             self.current_state = AppState.STUDENT
         elif choice == "x":
-            print("Thank You")
+            Printer.info("Thank You")
             self.current_state = AppState.EXIT
         else:
-            print("Invalid option")
+            Printer.error("Invalid option")
 
     def _run_student_menu(self):
         self.student_menu.run(

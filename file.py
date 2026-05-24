@@ -1,6 +1,8 @@
 import json
 import os
 
+from printer import Printer
+
 
 class File:
     def __init__(self, filename):
@@ -22,7 +24,7 @@ class File:
             return data if isinstance(data, list) else []
 
         except json.JSONDecodeError:
-            print("File is damaged. Starting with empty data.")
+            Printer.warning("File is damaged. Starting with empty data.")
             return []
 
     def write(self, data):

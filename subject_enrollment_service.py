@@ -1,5 +1,6 @@
 import random
 
+from printer import Printer
 from subject import Subject
 
 MAX_SUBJECTS = 4
@@ -23,11 +24,11 @@ class SubjectEnrollmentService:
     def enrol_subject(self, student_id):
         student = self.student_data_repository.find_student_by_id(student_id)
         if student is None:
-            print("Student does not exist")
+            Printer.error("Student does not exist")
             return False
 
         if len(student.subjects) >= MAX_SUBJECTS:
-            print("Students are allowed to enrol in 4 subjects only")
+            Printer.warning("Students are allowed to enrol in 4 subjects only")
             return False
 
         subject_id = self._generate_subject_id(student.subjects)
@@ -36,14 +37,14 @@ class SubjectEnrollmentService:
         student.subjects.append(subject)
         self.student_data_repository.update_student(student)
 
-        print("Enrolling in Subject-" + subject_id)
-        print("You are now enrolled in", len(student.subjects), "out of 4 subjects")
+        Printer.success(f"Enrolling in Subject-{subject_id}")
+        Printer.info(f"You are now enrolled in {len(student.subjects)} out of 4 subjects")
         return True
 
     def remove_subject(self, student_id, subject_id):
         student = self.student_data_repository.find_student_by_id(student_id)
         if student is None:
-            print("Student does not exist")
+            Printer.error("Student does not exist")
             return False
 
         new_subjects = []
@@ -56,11 +57,11 @@ class SubjectEnrollmentService:
                 new_subjects.append(subject)
 
         if not found:
-            print("Subject does not exist")
+            Printer.error("Subject does not exist")
             return False
 
         student.subjects = new_subjects
         self.student_data_repository.update_student(student)
 
-        print("Dropping Subject-" + subject_id)
+        Printer.success(f"Dropping Subject-{subject_id}")
         return True

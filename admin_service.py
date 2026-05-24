@@ -1,3 +1,4 @@
+from printer import Printer
 from subject_enrollment_service import MAX_SUBJECTS
 
 
@@ -47,12 +48,12 @@ class AdminService:
         is_removed = self.student_data_repository.remove_student(student_id)
 
         if is_removed:
-            print("Removing Student", student_id, "Account")
+            Printer.success(f"Removing Student {student_id} Account")
         else:
-            print("Student", student_id, "does not exist")
+            Printer.error(f"Student {student_id} does not exist")
 
         return is_removed
 
     def clear_students(self):
         self.student_data_repository.clear_students()
-        print("Students data cleared")
+        Printer.success("Students data cleared")
