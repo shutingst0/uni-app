@@ -1,3 +1,6 @@
+from utils import grade_from_mark
+
+
 class Student:
     def __init__(self, student_id, name, email, password, subjects=None):
         self.id = student_id
@@ -16,11 +19,19 @@ class Student:
 
         return total / len(self.subjects)
 
+    def get_result(self):
+        mark_average = self.average_mark()
+        grade_average = grade_from_mark(mark_average)
+        return {"mark_average": mark_average, "grade_average": grade_average}
+
     def to_dict(self):
+        result = self.get_result()
         return {
             "id": self.id,
             "name": self.name,
             "email": self.email,
             "password": self.password,
-            "subjects": self.subjects
+            "subjects": self.subjects,
+            "mark_average": result["mark_average"],
+            "grade_average": result["grade_average"]
         }

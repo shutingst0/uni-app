@@ -1,5 +1,7 @@
 import random
 
+from utils import grade_from_mark
+
 
 class Subject:
     def __init__(self, subject_id, mark=None, grade=None):
@@ -13,19 +15,7 @@ class Subject:
         if grade is not None:
             self.grade = grade
         else:
-            self.grade = self.grade_from_mark(self.mark)
-
-    def grade_from_mark(self, mark):
-        if mark < 50:
-            return "Z"
-        elif mark < 65:
-            return "P"
-        elif mark < 75:
-            return "C"
-        elif mark < 85:
-            return "D"
-        else:
-            return "HD"
+            self.grade = grade_from_mark(self.mark)
 
     def to_dict(self):
         return {
