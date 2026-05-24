@@ -125,26 +125,11 @@ db = Database()
 # Helper Functions
 # =========================
 
-def validate_email(email):
-    return EMAIL_RE.search(email) is not None
+from account_service import AccountService
 
 
 def validate_password(password):
     return PASSWORD_RE.match(password) is not None
-
-
-def generate_student_id():
-    students = db.read_students()
-    used_ids = []
-
-    for student in students:
-        used_ids.append(student["id"])
-
-    while True:
-        new_id = str(random.randint(1, 999999)).zfill(6)
-
-        if new_id not in used_ids:
-            return new_id
 
 
 def generate_subject_id(subjects):
@@ -213,33 +198,13 @@ def register_student():
         print("Name cannot be empty")
         return
 
-    if not validate_email(email):
-        print("Incorrect email format")
+    student = AccountService(db.read_students()).register(name, email, password)
+    if student is None:
         return
 
-    if not validate_password(password):
-        print("Incorrect password format")
-        return
-
-    existing_student = db.find_student_by_email(email)
-
-    if existing_student is not None:
-        print("Student already exists")
-        return
-
-    student_id = generate_student_id()
-
-    new_student = Student(
-        student_id,
-        name,
-        email,
-        password
-    ).to_dict()
-
-    db.save_student(new_student)
-
-    print("Student registered successfully")
-    print("Student ID:", student_id)
+    db.save_student(student)
+    print(f"Student {student['name']} registered successfully")
+    print("Student ID:", student["id"])
 
 
 def login_student():
@@ -248,22 +213,8 @@ def login_student():
     email = input_text("Email: ").strip().lower()
     password = input_text("Password: ").strip()
 
-    if not validate_email(email):
-        print("Incorrect email format")
-        return
-
-    if not validate_password(password):
-        print("Incorrect password format")
-        return
-
-    student = db.find_student_by_email(email)
-
+    student = AccountService(db.read_students()).login(email, password)
     if student is None:
-        print("Student does not exist")
-        return
-
-    if student["password"] != password:
-        print("Incorrect password")
         return
 
     print("Student login successful")
