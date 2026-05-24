@@ -5,7 +5,7 @@ from student import Student
 from utils import pad_number
 
 
-class AccountService:
+class AuthService:
     def __init__(self, student_data_repository):
         self.student_data_repository = student_data_repository
 

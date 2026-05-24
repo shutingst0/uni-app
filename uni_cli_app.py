@@ -3,7 +3,7 @@
 
 from enum import Enum
 
-from account_service import AccountService
+from auth_service import AuthService
 from printer import Printer
 from admin_service import AdminService
 from student_data_repository import StudentDataRepository
@@ -20,8 +20,8 @@ class AppState(Enum):
 
 
 class SubjectMenu:
-    def __init__(self, account_service, subject_enrollment_service):
-        self.account_service = account_service
+    def __init__(self, auth_service, subject_enrollment_service):
+        self.auth_service = auth_service
         self.subject_enrollment_service = subject_enrollment_service
 
     def run(self, student_id, on_exit):
@@ -52,7 +52,7 @@ class SubjectMenu:
             Printer.error("Password does not match - try again")
             return
 
-        success, error = self.account_service.change_password(student_id, new_password)
+        success, error = self.auth_service.change_password(student_id, new_password)
         if success:
             Printer.success("Password updated successfully")
         else:
@@ -64,7 +64,7 @@ class SubjectMenu:
             Printer.error(error)
             return
         Printer.success(f"Enrolling in Subject-{subject_id}")
-        student = self.account_service.get_student(student_id)
+        student = self.auth_service.get_student(student_id)
         Printer.info(f"You are now enrolled in {len(student.subjects)} out of 4 subjects")
 
     def _remove_subject(self, student_id):
@@ -84,7 +84,7 @@ class SubjectMenu:
             Printer.error(error)
 
     def _show_subjects(self, student_id):
-        student = self.account_service.get_student(student_id)
+        student = self.auth_service.get_student(student_id)
 
         if student is None:
             Printer.error("Student does not exist")
@@ -100,8 +100,8 @@ class SubjectMenu:
 
 
 class StudentMenu:
-    def __init__(self, account_service):
-        self.account_service = account_service
+    def __init__(self, auth_service):
+        self.auth_service = auth_service
 
     def run(self, on_exit, on_login):
         while True:
@@ -131,7 +131,7 @@ class StudentMenu:
             Printer.error("Name cannot be empty")
             return
 
-        student, error = self.account_service.register(name, email, password)
+        student, error = self.auth_service.register(name, email, password)
         if student is None:
             Printer.error(error)
             return
@@ -145,7 +145,7 @@ class StudentMenu:
         email = input_text("Email: ").strip().lower()
         password = input_text("Password: ").strip()
 
-        student, error = self.account_service.login(email, password)
+        student, error = self.auth_service.login(email, password)
         if student is None:
             Printer.error(error)
             return None
@@ -268,12 +268,12 @@ class AdminMenu:
 class UniCLIApp:
     def __init__(self):
         student_data_repository = StudentDataRepository()
-        account_service = AccountService(student_data_repository)
+        auth_service = AuthService(student_data_repository)
         subject_enrollment_service = SubjectEnrollmentService(student_data_repository)
         admin_service = AdminService(student_data_repository)
 
-        self.subject_menu = SubjectMenu(account_service, subject_enrollment_service)
-        self.student_menu = StudentMenu(account_service)
+        self.subject_menu = SubjectMenu(auth_service, subject_enrollment_service)
+        self.student_menu = StudentMenu(auth_service)
         self.admin_menu = AdminMenu(admin_service)
 
         self.current_state = AppState.UNIVERSITY

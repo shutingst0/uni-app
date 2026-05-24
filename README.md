@@ -39,7 +39,7 @@ graph TD
     end
 
     subgraph Services ["Services"]
-        AccountService
+        AuthService
         SubjectEnrollmentService
         AdminService
     end
@@ -56,18 +56,18 @@ graph TD
         Subject
     end
 
-    StudentMenu --> AccountService
-    SubjectMenu --> AccountService
+    StudentMenu --> AuthService
+    SubjectMenu --> AuthService
     SubjectMenu --> SubjectEnrollmentService
     AdminMenu --> AdminService
 
-    LoginFrame --> AccountService
-    EnrolmentFrame --> AccountService
+    LoginFrame --> AuthService
+    EnrolmentFrame --> AuthService
     EnrolmentFrame --> SubjectEnrollmentService
-    SubjectWindow --> AccountService
-    PasswordWindow --> AccountService
+    SubjectWindow --> AuthService
+    PasswordWindow --> AuthService
 
-    AccountService --> StudentDataRepository
+    AuthService --> StudentDataRepository
     SubjectEnrollmentService --> StudentDataRepository
     AdminService --> StudentDataRepository
 
@@ -101,7 +101,7 @@ erDiagram
 |---|---|---|
 | CLI Entry Point | `uni_cli_app.py` | `UniCLIApp` state machine, `StudentMenu`, `SubjectMenu`, `AdminMenu` |
 | GUI Entry Point | `uni_gui_app.py` | `GUIUniApp` state machine, `LoginFrame`, `EnrolmentFrame`, `SubjectWindow`, `PasswordWindow` |
-| Service | `account_service.py` | Register, login, change password, student lookup |
+| Service | `auth_service.py` | Register, login, change password, student lookup |
 | Service | `subject_enrollment_service.py` | Enrol and remove subjects |
 | Service | `admin_service.py` | Admin operations, student grouping and partitioning |
 | Repository | `student_data_repository.py` | CRUD operations, returns `Student` instances |

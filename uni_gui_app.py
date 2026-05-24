@@ -5,7 +5,7 @@ from enum import Enum
 import tkinter as tk
 from tkinter import messagebox
 
-from account_service import AccountService
+from auth_service import AuthService
 from student_data_repository import StudentDataRepository
 from subject_enrollment_service import SubjectEnrollmentService
 
@@ -28,7 +28,7 @@ class GUIUniApp:
         self.current_frame = None
 
         self.student_data_repository = StudentDataRepository()
-        self.account_service = AccountService(self.student_data_repository)
+        self.auth_service = AuthService(self.student_data_repository)
         self.subject_enrollment_service = SubjectEnrollmentService(self.student_data_repository)
 
         self.run()
@@ -94,7 +94,7 @@ class LoginFrame(tk.Frame):
             messagebox.showerror("Error", "Email and password cannot be empty")
             return
 
-        student, error = self.app.account_service.login(email, password)
+        student, error = self.app.auth_service.login(email, password)
 
         if student is None:
             messagebox.showerror("Error", error)
@@ -166,7 +166,7 @@ class EnrolmentFrame(tk.Frame):
     def refresh_subjects(self):
         self.subject_list.delete(0, tk.END)
 
-        student = self.app.account_service.get_student(self.student_id)
+        student = self.app.auth_service.get_student(self.student_id)
 
         if student is None:
             self.subject_list.insert(tk.END, "Student does not exist")
@@ -246,7 +246,7 @@ class SubjectWindow:
     def show_subjects(self):
         self.text_box.delete("1.0", tk.END)
 
-        student = self.app.account_service.get_student(self.student_id)
+        student = self.app.auth_service.get_student(self.student_id)
 
         if student is None:
             self.text_box.insert(tk.END, "Student does not exist")
@@ -305,7 +305,7 @@ class PasswordWindow:
             messagebox.showerror("Error", "Password does not match - try again")
             return
 
-        success, error = self.app.account_service.change_password(self.student_id, new_password)
+        success, error = self.app.auth_service.change_password(self.student_id, new_password)
 
         if not success:
             messagebox.showerror("Error", error)
