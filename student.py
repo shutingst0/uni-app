@@ -16,10 +16,6 @@ class Student:
 
         return total / len(self.subjects)
 
-    @classmethod
-    def from_dict(cls, d):
-        return cls(d["id"], d["name"], d["email"], d["password"], d.get("subjects", []))
-
     def to_dict(self):
         return {
             "id": self.id,
