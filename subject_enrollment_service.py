@@ -1,7 +1,8 @@
 import random
 
-from constants import MAX_SUBJECTS
 from subject import Subject
+
+MAX_SUBJECTS = 4
 from utils import pad_number
 
 

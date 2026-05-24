@@ -1,4 +1,4 @@
-from constants import MAX_SUBJECTS
+from subject_enrollment_service import MAX_SUBJECTS
 
 
 class AdminService:
