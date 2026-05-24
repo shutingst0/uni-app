@@ -145,7 +145,7 @@ def update_student_password(student_id, new_password, confirm_password):
     # use AccountService to validate password format
     account_service = get_account_service()
 
-    #Deliver a valid virtual email and only use it to check password format
+    # deliver a valid virtual email and only use it to check password format
     is_valid = account_service.validate("test@university.com", new_password)
 
     if is_valid is not True:
