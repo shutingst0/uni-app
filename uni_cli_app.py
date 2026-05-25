@@ -234,7 +234,7 @@ class AccountService:
                 print("Login successful")
                 return existing_student.to_dict()
 
-        print("Student does not exist or password is incorrect")
+        print("Student does not exist")
         return None
 
 
