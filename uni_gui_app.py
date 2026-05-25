@@ -77,10 +77,11 @@ def check_login(email, password):
                 student = account_service.login(email, password)
                 return True, "Login successful", student
             else:
-                return False, "Student does not exist", None
+                return False, "Password is incorrect", None
 
-    # if no matching email is found, return login failure
+    # no student with this email
     return False, "Student does not exist", None
+
 
 
 def enrol_student_subject(student_id):
