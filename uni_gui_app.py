@@ -57,14 +57,30 @@ def check_login(email, password):
     if email == "" or password == "":
         return False, "Email and password cannot be empty", None
 
+    email = email.strip().lower()
+    password = password.strip()
+
     account_service = get_account_service()
 
-    student = account_service.login(email, password)
+    # use AccountService validate function to check email/password format
+    is_valid = account_service.validate(email, password)
 
-    if student is None:
-        return False, "Student does not exist or password is incorrect", None
+    if is_valid is not True:
+        return False, "Incorrect email or password format", None
 
-    return True, "Login successful", student
+    # check whether email exists
+    for existing_student in account_service.students:
+        if email == existing_student.email.lower():
+            # email exists, now check password
+            if password == existing_student.password:
+                # still use AccountService login function
+                student = account_service.login(email, password)
+                return True, "Login successful", student
+            else:
+                return False, "Student does not exist", None
+
+    # if no matching email is found, return login failure
+    return False, "Student does not exist", None
 
 
 def enrol_student_subject(student_id):
