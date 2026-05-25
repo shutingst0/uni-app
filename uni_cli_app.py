@@ -8,7 +8,7 @@ import re
 DATA_FILE = "students.data"
 MAX_SUBJECTS = 4
 
-EMAIL_REGEX = r"^[^@]+@university\.com$"
+EMAIL_REGEX = r"^[A-Za-z]+\.[A-Za-z]+@university\.com$"
 PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$"
 
 
