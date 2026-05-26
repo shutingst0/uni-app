@@ -182,7 +182,7 @@ class AccountService:
         existing_ids = {s.id for s in self.students}
 
         while True:
-            new_id = f"{random.randint(0, 999999):06d}"
+            new_id = f"{random.randint(1, 999999):06d}"
 
             if new_id not in existing_ids:
                 return new_id
