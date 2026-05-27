@@ -5,11 +5,11 @@ import random
 import re
 
 
-DATA_FILE = "students.data"
+DATA_FILE = "students.data" # File that reserves students' information
 MAX_SUBJECTS = 4
 
-EMAIL_REGEX = r"^[A-Za-z]+\.[A-Za-z]+@university\.com$"
-PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$"
+EMAIL_REGEX = r"^[A-Za-z]+\.[A-Za-z]+@university\.com$" # Email format
+PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$" # Password format
 
 
 # =========================
@@ -22,7 +22,7 @@ class Subject:
         self.mark = mark
         self.grade = grade
 
-    def to_dict(self):
+    def to_dict(self): # Change list into dictionary
         return {
             "id": self.id,
             "mark": self.mark,
@@ -38,7 +38,7 @@ class Student:
         self.subjects = subjects if subjects is not None else []
 
     def average_mark(self):
-        if len(self.subjects) == 0:
+        if len(self.subjects) == 0: # If the student have not chosen a subject, his avg_mark would be 0
             return 0.0
 
         total = 0
@@ -47,7 +47,7 @@ class Student:
 
         return total / len(self.subjects)
 
-    def to_dict(self):
+    def to_dict(self): # Change list into dictionary
         return {
             "id": self.id,
             "name": self.name,
@@ -66,19 +66,19 @@ class Database:
         self.filename = filename
         self.create_file_if_missing()
 
-    def create_file_if_missing(self):
-        if not os.path.exists(self.filename):
+    def create_file_if_missing(self): # This function is for creating file if it doesn't exist
+        if not os.path.exists(self.filename): # Not + (not exist = False) = True
             with open(self.filename, "w", encoding="utf-8") as file:
-                json.dump([], file)
+                json.dump([], file) # Use none to fill the file
 
     def read_students(self):
         self.create_file_if_missing()
 
         try:
-            with open(self.filename, "r", encoding="utf-8") as file:
-                data = json.load(file)
+            with open(self.filename, "r", encoding="utf-8") as file: # Read model
+                data = json.load(file) # Read from file
 
-            if isinstance(data, list):
+            if isinstance(data, list): # Make sure we return a list
                 return data
 
             return []
@@ -88,17 +88,17 @@ class Database:
             return []
 
     def write_students(self, students):
-        with open(self.filename, "w", encoding="utf-8") as file:
-            json.dump(students, file, indent=2)
+        with open(self.filename, "w", encoding="utf-8") as file: # Write model
+            json.dump(students, file, indent=2) # Write into file
 
     def clear_students(self):
-        self.write_students([])
+        self.write_students([]) # To clear data, use none to cover previous file
 
     def find_student_by_email(self, email):
         students = self.read_students()
 
         for student in students:
-            if student["email"].lower() == email.lower():
+            if student["email"].lower() == email.lower(): # If the email of student == email chosen
                 return student
 
         return None
@@ -107,7 +107,7 @@ class Database:
         students = self.read_students()
 
         for student in students:
-            if student["id"] == student_id:
+            if student["id"] == student_id: # If the id of student == id chosen
                 return student
 
         return None
@@ -116,13 +116,13 @@ class Database:
         students = self.read_students()
 
         for i in range(len(students)):
-            if students[i]["id"] == updated_student["id"]:
+            if students[i]["id"] == updated_student["id"]: # Change the NO.i attribute in student into a new one
                 students[i] = updated_student
                 self.write_students(students)
                 return
 
-        students.append(updated_student)
-        self.write_students(students)
+        students.append(updated_student) # Add the 'updated_student' into 'students'
+        self.write_students(students) # Save new data
 
     def remove_student(self, student_id):
         students = self.read_students()
@@ -132,12 +132,12 @@ class Database:
 
         for student in students:
             if student["id"] == student_id:
-                found = True
+                found = True # If we can find the student we want to remove, then change 'found' from False into True but don't write the information of this student into file 2
             else:
-                new_students.append(student)
+                new_students.append(student) # If the student is not that one we want to remove, add his(her) information into file 2
 
-        if found:
-            self.write_students(new_students)
+        if found: # If 'Found' is still False, it means all students selected should not be removed, then we have no need to change the file
+            self.write_students(new_students) # If 'Found' is True, it means at least one student is removed, use new file 2 to cover previous one
 
         return found
 
