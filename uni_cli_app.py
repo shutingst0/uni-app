@@ -360,26 +360,26 @@ def subject_menu(student_id):
 
 def change_password(student_id):
     print("Updating Password")
-
+#find student use student_id
     student = db.find_student_by_id(student_id)
-
+#  if student is None return error
     if student is None:
         print("Student does not exist")
         return
-
+# user set password and confirm
     new_password = input_text("New Password: ").strip()
     confirm_password = input_text("Confirm Password: ").strip()
-
+# Determine if password consistent
     if new_password != confirm_password:
         print("Password does not match - try again")
         return
-
+# if password consistent, follow the rule whether ture
     valid_password = bool(re.fullmatch(PASSWORD_REGEX, new_password))
 
     if valid_password is False:
         print("Incorrect password format")
         return
-
+# reset password successful
     student["password"] = new_password
     db.save_student(student)
 
@@ -387,20 +387,23 @@ def change_password(student_id):
 
 
 def enrol_subject(student_id):
+    #find student use student_id
     student = db.find_student_by_id(student_id)
-
+#  if student is None return error
     if student is None:
         print("Student does not exist")
         return
 
     subjects = student["subjects"]
-
+#Students can register for a maximum of 4 courses.If they exceed this limit, return false
     if len(subjects) >= MAX_SUBJECTS:
         print("Students are allowed to enrol in 4 subjects only")
         return
-
+# create a new subject ID and makes sure it is unique.
     subject_id = generate_subject_id(subjects)
+# random mark 25-100
     mark = random.randint(25, 100)
+#grade(P、C、D、HD) relate to mark
     grade = grade_from_mark(mark)
 
     subject = Subject(subject_id, mark, grade).to_dict()
