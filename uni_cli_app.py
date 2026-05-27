@@ -25,7 +25,8 @@ class Subject:
         self.mark = mark
         self.grade = grade
 
-    def to_dict(self): # Change list into dictionary
+    def to_dict(self): 
+    # Change list into dictionary
         return {
             "id": self.id,
             "mark": self.mark,
@@ -51,7 +52,8 @@ class Student:
 
         return total / len(self.subjects)
 
-    def to_dict(self): # Change list into dictionary
+    def to_dict(self): 
+    # Change list into dictionary
         return {
             "id": self.id,
             "name": self.name,
