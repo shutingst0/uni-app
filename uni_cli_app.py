@@ -5,11 +5,11 @@ import random
 import re
 
 
-DATA_FILE = "students.data"
+DATA_FILE = "students.data" # File that reserves students' information
 MAX_SUBJECTS = 4
 
-EMAIL_REGEX = r"^[A-Za-z]+\.[A-Za-z]+@university\.com$"
-PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$"
+EMAIL_REGEX = r"^[A-Za-z]+\.[A-Za-z]+@university\.com$" # Email format
+PASSWORD_REGEX = r"^[A-Z][A-Za-z]{4,}\d{3,}$" # Password format
 
 
 # =========================
