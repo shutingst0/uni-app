@@ -405,8 +405,9 @@ def enrol_subject(student_id):
     mark = random.randint(25, 100)
 #grade(P、C、D、HD) relate to mark
     grade = grade_from_mark(mark)
-
+#Creates a subject object and converts it into dictionary format for saving.
     subject = Subject(subject_id, mark, grade).to_dict()
+#Adds the new subject into the student’s subject list.
     subjects.append(subject)
 
     db.save_student(student)
@@ -421,12 +422,13 @@ def remove_subject(student_id):
     if student is None:
         print("Student does not exist")
         return
-
+# find subject_id
     subject_id = input_text("Remove Subject by ID: ").strip()
-
+# .isdigit() checks whether the input contains only numbers.
+#If it is numeric, .zfill(3) automatically adds leading zeros to make it 3 digits.
     if subject_id.isdigit():
         subject_id = subject_id.zfill(3)
-
+# check subject_id whether 3 digit
     if len(subject_id) != 3 or not subject_id.isdigit():
         print("Invalid subject ID")
         return
@@ -435,17 +437,17 @@ def remove_subject(student_id):
     new_subjects = []
 
     found = False
-
+#If the subject ID matches, the subject to remove is found.
     for subject in subjects:
         if subject["id"] == subject_id:
             found = True
         else:
             new_subjects.append(subject)
-
+#Checks whether the subject actually exists.
     if not found:
         print("Subject does not exist")
         return
-
+#Replaces the old subject list with the new list.
     student["subjects"] = new_subjects
     db.save_student(student)
 
@@ -462,7 +464,7 @@ def show_subjects(student_id):
     subjects = student["subjects"]
 
     print("Showing", len(subjects), "subjects")
-
+# if student dont choose subject,return Nothing to Display
     if len(subjects) == 0:
         print("< Nothing to Display >")
         return
@@ -482,7 +484,7 @@ def show_subjects(student_id):
 # =========================
 # Admin System
 # =========================
-
+#c clear database,g group students by grade,p partition pass/fail students,r remove student,s show all students,x exit system
 def admin_menu():
     while True:
         choice = input_text("Admin System (c/g/p/r/s/x): ").strip().lower()
@@ -507,11 +509,11 @@ def show_all_students():
     students = db.read_students()
 
     print("Student List")
-
+# if dont have students,print Nothing to Display
     if len(students) == 0:
         print("< Nothing to Display >")
         return
-
+# show details
     for student in students:
         print(
             student["name"],
@@ -538,9 +540,11 @@ def group_students():
         "P": [],
         "Z": []
     }
-
+# use for student in students to loop through all students.
     for student in students:
+        # Calculates the student grade based on average mark.
         grade = student_grade(student)
+        # Adds the student into the corresponding grade group.
         groups[grade].append(student)
 
     for grade in groups:
@@ -548,6 +552,7 @@ def group_students():
             print(grade, "-->", end=" ")
 
             for student in groups[grade]:
+                #Calculates the student average mark.
                 avg = average_mark(student)
                 print(
                     "[" + student["name"],
@@ -556,13 +561,14 @@ def group_students():
                     "--> GRADE:",
                     grade,
                     "--> MARK:",
+                    # Formats the average mark to 2 decimal places.
                     format(avg, ".2f") + "]",
                     end=" "
                 )
 
             print()
 
-
+# this funcation：students are categorized into F and P based on their mark.
 def partition_students():
     students = db.read_students()
 
@@ -583,7 +589,8 @@ def partition_students():
     print("FAIL -->", format_student_list(fail_students))
     print("PASS -->", format_student_list(pass_students))
 
-
+#This funcation is used to format the student list into a readable string showing student name, ID, grade, and average mark.
+#The program displays student name, ID, grade, and average mark.
 def format_student_list(students):
     if len(students) == 0:
         return "[]"
@@ -612,6 +619,7 @@ def format_student_list(students):
 
 
 def remove_student():
+    # Determine if the student ID is valid
     student_id = input_text("Remove by ID: ").strip()
 
     if len(student_id) != 6 or not student_id.isdigit():
@@ -619,13 +627,14 @@ def remove_student():
         return
 
     removed = db.remove_student(student_id)
-
+#If it is reasonable to determine whether the student ID exists...
     if removed:
         print("Removing Student", student_id, "Account")
     else:
         print("Student", student_id, "does not exist")
 
-
+#The program first asks the admin for confirmation and uses .strip().lower() to process the input.
+#If the input is y or yes, the system calls db.clear_students() to clear the database.Otherwise, the system cancels the operation and shows Clear cancelled.
 def clear_database():
     print("Clearing students database")
 
