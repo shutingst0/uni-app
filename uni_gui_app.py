@@ -20,7 +20,7 @@ from uni_cli_app import (
 
 # ==============================
 # GUI Helper Functions
-# These functions invoke GUI logic
+# These functions invoke CLI logic
 # ==============================
 
 def get_account_service():
