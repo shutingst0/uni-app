@@ -188,7 +188,7 @@ class AccountService:
                 return new_id
 
     def register(self, name, email, password):
-        # 负责整个注册流程
+     
         name = name.strip()
         email = email.strip().lower()
         password = password.strip()
