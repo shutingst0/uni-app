@@ -173,8 +173,12 @@ db = Database()
 # =========================
 
 class AccountService:
-    def __init__(self, students=None):
-        self.students = [self._from_dict(s) for s in students] if students else []
+    def __init__(self, registed_students_dict=None):  
+        self.students = []
+        if registed_students_dict is not None:
+            for student_dict in registed_students_dict:
+                student = self._from_dict(student_dict)
+                self.students.append(student)
 
     def _from_dict(self, student_dict):
         return Student(student_dict["id"], student_dict["name"], student_dict["email"], student_dict["password"], student_dict.get("subjects", []))
@@ -182,9 +186,6 @@ class AccountService:
     def validate(self, email, password):
         valid_email = bool(re.match(EMAIL_REGEX, email))
         valid_password = bool(re.match(PASSWORD_REGEX, password))
-
-        print(f"email {valid_email}")
-        print(f"password {valid_password}")
 
         if valid_password is False or valid_email is False:
             print("Incorrect email or password format")
@@ -202,7 +203,9 @@ class AccountService:
         return False
 
     def generate_unique_student_id(self):
-        existing_ids = {s.id for s in self.students}
+        existing_ids = []
+        for student in self.students:
+            existing_ids.append(student.id)
 
         while True:
             new_id = f"{random.randint(1, 999999):06d}"
