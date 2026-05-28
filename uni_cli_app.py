@@ -607,7 +607,7 @@ def partition_students():
     for student in students:
         subjects = student["subjects"]
         avg = average_mark(student)
-
+#Students must achieve an average score of 50 or higher in four courses to pass; otherwise, they will fail.
         if len(subjects) == MAX_SUBJECTS and avg >= 50:
             pass_students.append(student)
         else:
