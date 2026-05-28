@@ -173,14 +173,15 @@ db = Database()
 # =========================
 
 class AccountService:
-    def __init__(self, registed_students_dict=None):  
-        self.students = []
+    def __init__(self, registed_students_dict=None):
+        self.students = [] 
         if registed_students_dict is not None:
             for student_dict in registed_students_dict:
-                student = self._from_dict(student_dict)
+                student = self.transform_to_class_instance(student_dict) 
                 self.students.append(student)
+               
 
-    def _from_dict(self, student_dict):
+    def transform_to_class_instance(self, student_dict):
         return Student(student_dict["id"], student_dict["name"], student_dict["email"], student_dict["password"], student_dict.get("subjects", []))
 
     def validate(self, email, password):
@@ -196,7 +197,7 @@ class AccountService:
 
     def check_duplicate(self, new_student):
         for existing_student in self.students:
-            if new_student.email.lower() == existing_student.email.lower():
+            if new_student.email.lower() == existing_student.email.lower():#lower(email全部变成小写)
                 print(f"Student with email {new_student.email} already exists")
                 return True
 
@@ -208,14 +209,14 @@ class AccountService:
             existing_ids.append(student.id)
 
         while True:
-            new_id = f"{random.randint(1, 999999):06d}"
+            new_id = f"{random.randint(1, 999999):06d}" #prefix to 6 digits
 
             if new_id not in existing_ids:
                 return new_id
 
     def register(self, name, email, password):
      
-        name = name.strip()
+        name = name.strip() #remove spaces before and after string
         email = email.strip().lower()
         password = password.strip()
 
@@ -239,7 +240,7 @@ class AccountService:
         self.students.append(student)
 
         print(f"Signed up student {student.name}")
-        print("Student ID:", student.id)
+        print(f"Student ID: {student.id}")
 
         return student.to_dict()
 
@@ -288,7 +289,7 @@ def generate_subject_id(subjects):
         used_ids.append(subject["id"])
 
     while True:
-        new_id = str(random.randint(1, 999)).zfill(3)
+        new_id = f"{random.randint(1, 999):03d}"
 
         if new_id not in used_ids:
             return new_id
@@ -330,15 +331,15 @@ def register_student():
     email = input_text("Email: ").strip().lower()
     password = input_text("Password: ").strip()
 
-    students = db.read_students()
-    account_service = AccountService(students)
+    students_dict = db.read_students() #read students from database
+    account_service = AccountService(students_dict)
 
-    new_student = account_service.register(name, email, password)
+    new_student_dict = account_service.register(name, email, password)
 
-    if new_student is None:
+    if new_student_dict is None:
         return
 
-    db.save_student(new_student)
+    db.save_student(new_student_dict)
 
 
 def login_student():
@@ -347,15 +348,15 @@ def login_student():
     email = input_text("Email: ")
     password = input_text("Password: ")
 
-    students = db.read_students()
-    account_service = AccountService(students)
+    students_dict = db.read_students()
+    account_service = AccountService(students_dict)
 
-    student = account_service.login(email, password)
+    student_dict = account_service.login(email, password)
 
-    if student is None:
+    if student_dict is None:
         return
 
-    subject_menu(student["id"])
+    subject_menu(student_dict["id"])
 
 # region Ming Sun
 # =========================
